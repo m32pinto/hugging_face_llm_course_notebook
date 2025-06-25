@@ -1,5 +1,11 @@
 Hugging face llm course / curso de llm
 
+Preparação do ambiente. para windows:
+
+Terminal: pip install torch (instala um versão otimizada para cpu) ; python -m venv venv_(nome_da_pasta) ; venv\Scripts\activate (ativar o ambiente virtual) ;
+
+  Para desativar utilizar: deactivate .
+
 Preparação do ambiente. para linux:
 
 Terminal:  sudo apt install python3 python3-pip python3-venv ; python3 -m venv venv_(nome_da_pasta) ; source venv_(nome_da_pasta)/bin/activate (para ativar o ambiente isolado para trabalho) ; https://pytorch.org/get-started/locally/#supported-linux-distributions nesse link decidir se irá usar a CPU ou GPU e selecionar o SO utilizado e instalar as depedencias de acordo com o escolhido ; 

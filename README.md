@@ -344,7 +344,7 @@ print(result)
 
 Nota: português bom, porém com um pouco menos de coerência.
 
-base:
+Base:
 
 from transformers import pipeline
 
@@ -356,3 +356,39 @@ generator(
 )
 
 Nota: A base gera um texto bem mal formatado se for executado de forma crua no terminal.
+
+4º transformer fill mask
+
+Base: from transformers import pipeline
+
+unmasker = pipeline("fill-mask")
+unmasker("This course will teach you all about <mask> models.", top_k=2)
+
+Exercício hugging face: ✏️ Try it out! Search for the bert-base-cased model on the Hub and identify its mask word in the Inference API widget. What does this model predict for the sentence in our pipeline example above? / Experimente! Procure o modelo bert-base-cased no Hub e identifique sua palavra-máscara no widget da API de Inferência. O que esse modelo prevê para a frase em nosso exemplo de pipeline acima?
+
+R:
+
+from transformers import pipeline
+
+unmasker = pipeline("fill-mask", model="neuralmind/bert-base-portuguese-cased")
+result=unmasker("This course will teach you all about [MASK] models", top_k=2)
+
+print(result)
+
+[{'score': 0.6997271180152893, 'token': 1621, 'token_str': 'the', 'sequence': 'This course will teach you all about the models'}, 
+{'score': 0.04927678406238556, 'token': 123, 'token_str': 'a', 'sequence': 'This course will teach you all about a models'}]
+
+5º transformer Named entity recognition
+
+Base:
+
+from transformers import pipeline
+
+ner = pipeline("ner", grouped_entities=True)
+ner("My name is Sylvain and I work at Hugging Face in Brooklyn.")
+
+Execícico hugging face: ✏️ Try it out! Search the Model Hub for a model able to do part-of-speech tagging (usually abbreviated as POS) in English. What does this model predict for the sentence in the example above? / ✏️ Experimente! Procure no Model Hub por um modelo capaz de fazer marcação de classes gramaticais (geralmente abreviado como POS) em inglês. O que esse modelo prevê para a frase do exemplo acima?
+
+R:
+
+

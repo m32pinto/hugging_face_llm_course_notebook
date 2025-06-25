@@ -196,6 +196,7 @@ obs: sempre receber o resultado do objeto para depois imprimir.
 2º transformer zero shot classification
 
 Exercício hugging face: ✏️ Try it out! Play around with your own sequences and labels and see how the model behaves.
+Experimente! Experimente com suas próprias sequências e rótulos e veja como o modelo se comporta.
 
 Base:
 
@@ -296,3 +297,62 @@ print(result)
 Nota:aprovado com um rótulo a mais.
 
 --------------------------------
+
+3º transformer geração de texto.
+
+Exercício hugging face: ✏️ Try it out! Use the num_return_sequences and max_length arguments to generate two sentences of 15 words each./Experimente! Use os num_return_sequencesargumentos max_lengthe para gerar duas frases de 15 palavras cada.
+
+R:
+
+from transformers import pipeline
+
+generator = pipeline("text-generation") # Isso usará o modelo padrão que você viu
+
+result = generator(
+    "The clouds are sereny and bright,",
+    max_new_tokens=15, # Gerar no MÁXIMO 15 NOVOS tokens (aproximadamente 15 palavras)
+    num_return_sequences=2, # Comece com 1 para facilitar a depuração da saída
+    do_sample=True, # Ajuda na criatividade e reduz repetição
+    temperature=0.7, # Controla a aleatoriedade (entre 0.5 e 1.0 é um bom range)
+    pad_token_id=generator.tokenizer.eos_token_id # Importante para que o modelo saiba parar
+)
+
+print(result)
+
+[{'generated_text': 'The clouds are sereny and bright, and the air is so fresh that people can breathe freely without looking down.'}, 
+{'generated_text': 'The clouds are sereny and bright, and I can see the stars and the stars and the stars. And I'}]
+
+Nota: o segundo texto é muito aleatório e pode vir até mesmo incoerente e incompleto diferente do primeiro que tende a ser mais coerente e completo.
+
+Exercícico hugging face: ✏️ Try it out! Use the filters to find a text generation model for another language. Feel free to play with the widget and use it in a pipeline!/
+Experimente! Use os filtros para encontrar um modelo de geração de texto para outro idioma. Sinta-se à vontade para experimentar o widget e usá-lo em um pipeline!
+
+R:
+
+from transformers import pipeline
+
+generator = pipeline("text-generation", model="goldfish-models/por_latn_1000mb")
+result=generator(
+    "Nuvens são serenas e",
+    max_length=30,
+    num_return_sequences=1,
+)
+
+print(result)
+
+[{'generated_text': 'Nuvens são serenas e Para se ter uma ideia da sua complexidade, o número de participantes que irá decorrer nas diferentes etapas do concurso de poesia vai ser cada vez menor.'}]
+
+Nota: português bom, porém com um pouco menos de coerência.
+
+base:
+
+from transformers import pipeline
+
+generator = pipeline("text-generation", model="HuggingFaceTB/SmolLM2-360M")
+generator(
+    "In this course, we will teach you how to",
+    max_length=30,
+    num_return_sequences=2,
+)
+
+Nota: A base gera um texto bem mal formatado se for executado de forma crua no terminal.

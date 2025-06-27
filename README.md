@@ -391,4 +391,143 @@ Execícico hugging face: ✏️ Try it out! Search the Model Hub for a model abl
 
 R:
 
+from transformers import pipeline
+
+ner = pipeline("ner", grouped_entities=True,model="dslim/bert-base-NER")
+result=ner("My name is Sylvain and I work at Hugging Face in Brooklyn.")
+
+print(result)
+
+[
+  {'entity_group': 'PER', 'score': 0.9981525, 'word': 'Sylvain', 'start': 11, 'end': 18},
+  {'entity_group': 'ORG', 'score': 0.93690395, 'word': 'Hugging Face', 'start': 33, 'end': 45},
+  {'entity_group': 'LOC', 'score': 0.9971419, 'word': 'Brooklyn', 'start': 49, 'end': 57}
+]
+
+Nota: esse conseguiu classificar como pessoa, organização e local.
+
+
+Teste 1: 
+
+from transformers import pipeline
+
+ner = pipeline("ner", grouped_entities=True,model="vblagoje/bert-english-uncased-finetuned-pos")
+result=ner("My name is Sylvain and I work at Hugging Face in Brooklyn.")
+
+print(result)
+
+[
+    {'entity_group': 'PRON', 'score': np.float32(0.9994592), 'word': 'my', 'start': 0, 'end': 2},
+    {'entity_group': 'NOUN', 'score': np.float32(0.99601364), 'word': 'name', 'start': 3, 'end': 7},
+    {'entity_group': 'AUX', 'score': np.float32(0.9953696), 'word': 'is', 'start': 8, 'end': 10},
+    {'entity_group': 'PROPN', 'score': np.float32(0.9981525), 'word': 'sylvain', 'start': 11, 'end': 18},
+    {'entity_group': 'CCONJ', 'score': np.float32(0.99918765), 'word': 'and', 'start': 19, 'end': 22},
+    {'entity_group': 'PRON', 'score': np.float32(0.9994679), 'word': 'i', 'start': 23, 'end': 24},
+    {'entity_group': 'VERB', 'score': np.float32(0.99923587), 'word': 'work', 'start': 25, 'end': 29},
+    {'entity_group': 'ADP', 'score': np.float32(0.90630955), 'word': 'at', 'start': 30, 'end': 32},
+    {'entity_group': 'PROPN', 'score': np.float32(0.719051), 'word': 'hugging face', 'start': 33, 'end': 45},
+    {'entity_group': 'ADP', 'score': np.float32(0.9993789), 'word': 'in', 'start': 46, 'end': 48},
+    {'entity_group': 'PROPN', 'score': np.float32(0.9989513), 'word': 'brooklyn', 'start': 49, 'end': 57},
+    {'entity_group': 'PUNCT', 'score': np.float32(0.99963903), 'word': '.', 'start': 57, 'end': 58}
+]
+
+Nota: esse modelo, classificou a sintaxe do texto.
+
+6º transformer Question answering
+
+Base:
+
+from transformers import pipeline
+
+question_answerer = pipeline("question-answering")
+question_answerer(
+    question="Where do I work?",
+    result=context="My name is Sylvain and I work at Hugging Face in Brooklyn",
+)
+
+printf(result)
+
+Teste 1:
+
+from transformers import pipeline
+
+question_answerer = pipeline("question-answering")
+result = question_answerer(
+    question="You do delivery ?",
+    context="menu,itens: fresh fish,frozen fish, kani and seaweed.," \
+    "Order: If you want to place an order, please leave your name, your order,Localization: " \
+    "your address and payment method "
+    "and we will soon check the availability of the products and more information about the order."\
+    "Addresses:Here are the of the stores and their opening hours..."\
+    "Delivery informations: We deliver to neighborhoods x, y, x from time x to y, from x to y ..."
+
+)
+
+print(result)
+
+Nota: Deve-se fazer a pergunta de forma mais direta possível para obter o melhor retorno.
+
+7º transformer summarization.
+
+Base:
+
+from transformers import pipeline
+
+summarizer = pipeline("summarization")
+result=summarizer(
+    """
+    America has changed dramatically during recent years. Not only has the number of 
+    graduates in traditional engineering disciplines such as mechanical, civil, 
+    electrical, chemical, and aeronautical engineering declined, but in most of 
+    the premier American universities engineering curricula now concentrate on 
+    and encourage largely the study of engineering science. As a result, there 
+    are declining offerings in engineering subjects dealing with infrastructure, 
+    the environment, and related issues, and greater concentration on high 
+    technology subjects, largely supporting increasingly complex scientific 
+    developments. While the latter is important, it should not be at the expense 
+    of more traditional engineering.
+
+    Rapidly developing economies such as China and India, as well as other 
+    industrial countries in Europe and Asia, continue to encourage and advance 
+    the teaching of engineering. Both China and India, respectively, graduate 
+    six and eight times as many traditional engineers as does the United States. 
+    Other industrial countries at minimum maintain their output, while America 
+    suffers an increasingly serious decline in the number of engineering graduates 
+    and a lack of well-educated engineers.
+"""
+)
+
+print(result)
+
+{'summary_text': ' America has changed dramatically during recent years . The number of engineering graduates in the U.S. has declined in traditional engineering disciplines such as mechanical, civil,    electrical, chemical, and aeronautical engineering . Rapidly developing economies such as China and India continue to encourage and advance the teaching of engineering .'}]
+
+8º transformer translation. Tradutor.
+
+Nota: para esse transformer é usado o sentence piece, caso seja solicitado usar pip install sentecepiece
+
+from transformers import pipeline
+
+translator = pipeline("translation", model="Helsinki-NLP/opus-mt-fr-en")
+result=translator("Ce cours est produit par Hugging Face.")
+
+print(result)
+
+[{'translation_text': 'This course is produced by Hugging Face.'}]
+
+Exercício hugging face: ✏️ Try it out! Search for translation models in other languages and try to translate the previous sentence into a few different languages./ ✏️ Experimente! Pesquise modelos de tradução em outros idiomas e tente traduzir a frase anterior para vários idiomas diferentes.
+
+
+R:
+
+(De pt para en)
+
+from transformers import pipeline
+
+translator = pipeline("translation", model="Helsinki-NLP/opus-mt-tc-big-en-pt")
+result=translator("Hi, I would like to make a request")
+
+print(result)
+
+[{'translation_text': 'Olá, gostaria de fazer um pedido'}]
+
 

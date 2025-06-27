@@ -530,4 +530,65 @@ print(result)
 
 [{'translation_text': 'Olá, gostaria de fazer um pedido'}]
 
+9º transformer image classification
+
+Nota: esse transformer necessita de um biblioteca chamada pillow, para instalar pip install pillow.
+
+Base:
+
+from transformers import pipeline
+
+image_classifier = pipeline(
+    task="image-classification", model="google/vit-base-patch16-224"
+)
+result = image_classifier(
+    "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/pipeline-cat-chonk.jpeg"
+)
+print(result)
+
+(venv) PS C:\Users\CRT02\Desktop\atividades_programacao\testes_llm> python .\zero_shot_test.py
+Device set to use cpu
+[{'label': 'lynx, catamount', 'score': 0.43349984288215637}, 
+{'label': 'cougar, puma, catamount, mountain lion, painter, panther, Felis concolor', 'score': 0.03479618579149246},
+{'label': 'snow leopard, ounce, Panthera uncia', 'score': 0.03240193799138069},
+{'label': 'Egyptian cat', 'score': 0.02394479140639305},
+{'label': 'tiger cat', 'score': 0.022889239713549614}]
+
+Teste 1:
+
+from transformers import pipeline
+
+image_classifier = pipeline(
+    task="image-classification", model="google/vit-base-patch16-224"
+)
+result = image_classifier("imagem local com uma piscina e um mergulhador")
+print(result)
+
+[{'label': 'bathing cap, swimming cap', 'score': 0.5953492522239685}, 
+{'label': 'swimming trunks, bathing trunks', 'score': 0.1526799201965332}, 
+{'label': 'snorkel', 'score': 0.09047021716833115}, 
+{'label': 'maillot, tank suit', 'score': 0.04795584827661514}, 
+{'label': 'maillot', 'score': 0.02403387613594532}]
+
+10º transformer Automatic speech recognition (Atenção esse não foi possivel rodar)
+
+Nota é necessário: ffmpeg e pip install soundfile librosa
+
+Base:
+
+from transformers import pipeline
+
+transcriber = pipeline(
+    task="automatic-speech-recognition", model="openai/whisper-large-v3"
+)
+result = transcriber(
+    "https://huggingface.co/datasets/Narsil/asr_dummy/resolve/main/mlk.flac"
+)
+print(result)
+
+
+
+
+
+
 

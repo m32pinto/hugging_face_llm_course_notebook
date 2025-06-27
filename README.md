@@ -1,22 +1,38 @@
-Hugging face llm course / curso de llm
+# Hugging face 🤗 llm course 📚 / curso de llm 📚
 
-Preparação do ambiente. para windows:
+## Preparação do ambiente para windows 💻:
 
-Terminal: pip install torch (instala um versão otimizada para cpu) ; python -m venv venv_(nome_da_pasta) ; venv\Scripts\activate (ativar o ambiente virtual) ;
+>Terminal: 
 
-  Para desativar utilizar: deactivate .
+    pip install torch (instala um versão otimizada para cpu) ; 
 
-Preparação do ambiente. para linux:
+    python -m venv venv_(nome_da_pasta) ;
 
-Terminal:  sudo apt install python3 python3-pip python3-venv ; python3 -m venv venv_(nome_da_pasta) ; source venv_(nome_da_pasta)/bin/activate (para ativar o ambiente isolado para trabalho) ; https://pytorch.org/get-started/locally/#supported-linux-distributions nesse link decidir se irá usar a CPU ou GPU e selecionar o SO utilizado e instalar as depedencias de acordo com o escolhido ; 
+    venv\Scripts\activate (ativar o ambiente virtual) ;
 
-O nome da pasta ficará entre parênteses.
+    Para desativar utilizar: deactivate .
 
-  Para desativar utilizar: deactivate .
+## Preparação do ambiente para linux 💻:
 
-Preparação do ambiente para Transformers :
+>Terminal:  
 
-pip install transformers / datasets / evaluate / sentencepiece (pode ser instalado por partes por questões de organização e estudo ex: pip install transformers) ;  
+    sudo apt install python3 python3-pip python3-venv ; 
+
+    python3 -m venv venv_(nome_da_pasta) ; 
+
+    source venv_(nome_da_pasta)/bin/activate (para ativar o ambiente isolado para trabalho) ; 
+
+    https://pytorch.org/get-started/locally/#supported-linux-distributions 
+
+    Nesse link deve-se decidir se irá usar a CPU ou GPU. Selecionar o SO utilizado e instalar as depedencias de acordo com o escolhido ;
+
+    O nome da pasta ficará entre parênteses.
+
+    Para desativar utilizar: deactivate .
+
+## Preparação do ambiente para utilização dos Transformers 🧠 :
+
+    pip install transformers / datasets / evaluate / sentencepiece (pode ser instalado por partes por questões de organização e estudo ex: pip install transformers) ;  
 
 Nota: o modelo padrão é - distilbert/distilbert-base-uncased-finetuned-sst-2-english and revision 714eb0f
 

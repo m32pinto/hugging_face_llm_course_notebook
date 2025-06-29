@@ -12,7 +12,6 @@
 
     Para desativar utilizar: deactivate .
 
-Nota: caso tenha dificuldade para achar o activate usar "find . -name "activate" (Linux)
 
 ## Preparação do ambiente para linux 💻:
 
@@ -31,6 +30,9 @@ Nota: caso tenha dificuldade para achar o activate usar "find . -name "activate"
     O nome da pasta ficará entre parênteses.
 
     Para desativar utilizar: deactivate .
+
+
+Nota: caso tenha dificuldade para achar o activate usar "find . -name "activate" (Linux)
 
 ## Preparação do ambiente para utilização dos Transformers 🧠 :
 

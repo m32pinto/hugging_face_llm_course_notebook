@@ -12,6 +12,8 @@
 
     Para desativar utilizar: deactivate .
 
+Nota: caso tenha dificuldade para achar o activate usar "find . -name "activate" (Linux)
+
 ## Preparação do ambiente para linux 💻:
 
 >Terminal:  

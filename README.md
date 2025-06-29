@@ -606,6 +606,34 @@ result = transcriber(
 )
 print(result)
 
+Nota: o modelo base utilizado é muito grande logo pode ser substituido por um menor como : openai/whisper-small
+
+Teste 1:
+
+from transformers import pipeline
+
+transcriber = pipeline( task="automatic-speech-recognition", model="openai/whisper-small" ) 
+result = transcriber( "https://huggingface.co/datasets/Narsil/asr_dummy/resolve/main/mlk.flac" ) 
+
+print(result)
+
+{'text': ' I have a dream that one day this nation will rise up and live out the true meaning of its creed.'}
+
+Nota: teste aprovado.
+
+Pegadas de carbono: 
+
+Ferramentas: https://mlco2.github.io/impact/#compute ; https://codecarbon.io/ ; 
+
+base:
+
+from codecarbon import EmissionsTracker
+
+tracker = EmissionsTracker()
+tracker.start()
+# GPU Intensive code goes here
+tracker.stop()
+
 
 
 

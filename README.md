@@ -50,7 +50,7 @@ Nesse link deve-se decidir se irá usar a CPU ou GPU. Selecionar o SO utilizado 
 ℹ️Para desativar o ambiente virtual
 
 
-ℹ️Nota: caso tenha dificuldade para achar o activate (linus) usar:
+ℹ️Nota: caso tenha dificuldade para achar o activate (linux) usar:
 
      "find . -name "activate" 
 
@@ -648,6 +648,7 @@ Base:
     print(result)
 
 Saída relevante📝:
+
 Device set to use cpu
 [{'label': 'lynx, catamount', 'score': 0.43349984288215637}, 
 {'label': 'cougar, puma, catamount, mountain lion, painter, panther, Felis concolor', 'score': 0.03479618579149246},
@@ -716,6 +717,23 @@ base:
     tracker.start()
     GPU Intensive code goes here
     tracker.stop()
+
+Tokenizadores:
+
+base:
+
+    from transformers import BertTokenizer
+
+tokenizer = BertTokenizer.from_pretrained("google-bert/bert-base-uncased")
+result = tokenizer.tokenize("I want do a order")
+
+print(result)
+
+Saída relevante: 
+
+['i', 'want', 'do', 'a', 'order']
+
+
 
 
 

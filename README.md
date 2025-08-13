@@ -705,9 +705,9 @@ Saída relevante📝: {'text': ' I have a dream that one day this nation will ri
 
 ℹ️Nota: teste aprovado.
 
-## Pegadas de carbono: 
+## ☁️ ☁️  Pegadas de carbono: 
 
-Ferramentas: https://mlco2.github.io/impact/#compute ; https://codecarbon.io/ ; 
+🔧🔧 Ferramentas: https://mlco2.github.io/impact/#compute ; https://codecarbon.io/ ; 
 
 base:
 
@@ -729,7 +729,7 @@ result = tokenizer.tokenize("I want do a order")
 
 print(result)
 
-Saída relevante: 
+Saída relevante📝: 
 
 ['i', 'want', 'do', 'a', 'order']
 

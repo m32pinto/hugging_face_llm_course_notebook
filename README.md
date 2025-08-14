@@ -733,6 +733,236 @@ Saída relevante📝:
 
 ['i', 'want', 'do', 'a', 'order']
 
+## Capítulo 2 Por trás da função pipeline. 📄📚
+
+## Funcionamento do analisador de sentimentos. 😊 ou 😡
+
+ℹ️ Nota todo os códigos abaixo podem ser copiado juntos para o editor.
+
+## Fase 0: O resultado
+
+    from transformers import pipeline
+
+    classifier = pipeline("sentiment-analysis")
+    result = classifier(
+        [
+            "I've been waiting for a HuggingFace course my whole life.",
+            "I hate this so much!",
+        ]
+    )
+
+    print(result)
+
+Saída relevante da fase 0 📝:
+
+    [{'label': 'POSITIVE', 'score': 0.9598046541213989}, {'label': 'NEGATIVE', 'score': 0.9994558691978455}]
+
+
+## Fase 1: Pré-processamento com um tokenizador
+
+    from transformers import AutoTokenizer
+
+
+    checkpoint = "distilbert-base-uncased-finetuned-sst-2-english"
+    tokenizer = AutoTokenizer.from_pretrained(checkpoint)
+
+
+    raw_inputs = [
+        "I've been waiting for a HuggingFace course my whole life.",
+        "I hate this so much!",
+    ]
+    inputs = tokenizer(raw_inputs, padding=True, truncation=True, return_tensors="pt")
+    print(inputs)
+
+Saída relevante da fase 1 📝:
+
+    {'input_ids': tensor
+    
+    ([[  101,  1045,  1005,  2310,  2042,  3403,  2005,  1037, 17662, 12172, 2607,  2026,  2878,  2166,  1012,   102],
+
+    [  101,  1045,  5223,  2023,  2061,  2172,   999,   102,     0,     0,
+    0,     0,     0,     0,     0,  0]]),
+
+     'attention_mask': tensor
+     
+     ([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 
+     
+     [1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]])}
+
+ℹ️ Nota: A saída em si é um dicionário contendo duas chaves, input_ids e attention_mask. input_ids contém duas linhas de inteiros (uma para cada frase) que são os identificadores exclusivos dos tokens em cada frase
+
+ℹ️ Nota: os ## no código existem pois todo os códigos dessa parte foram unificados, logo eles podem ser utilizado juntos no editor, porém se esse em específico for utilizado só deve ser removido os ##.
+
+## Fase 2: Passando pelo modelo.
+
+    from transformers import AutoModel
+
+    ##checkpoint = "distilbert-base-uncased-finetuned-sst-2-english"
+    ##checkpoint ja foi carregado mais acima caso o código seja usado só, deve-se usar o chackpoint acima
+
+    model = AutoModel.from_pretrained(checkpoint)
+
+    outputs = model(**inputs)
+    print(outputs.last_hidden_state.shape)
+
+Saída relevante da fase 2 📝:
+
+
+    torch.Size([2, 16, 768])
+
+
+
+
+ℹ️Nota: A saída sera três números que tem o significado abaixo:
+
+- Tamanho do lote: O número de sequências processadas por vez (2 em nosso exemplo).
+
+- Comprimento da sequência: O comprimento da representação numérica da sequência (16 no nosso exemplo).
+
+- Tamanho oculto: A dimensão vetorial de cada entrada do modelo (768 em nosso exemplo).
+
+## Fase 2.1 Cabeçote do modelo: Dando sentido aos números
+
+    from transformers import AutoModelForSequenceClassification
+
+    ## Modelo com um cabeçalho de classificação de sequência (para poder classificar as sentenças como positivas ou negativas).
+
+    model = AutoModelForSequenceClassification.from_pretrained(checkpoint)
+
+    outputs = model(**inputs)
+
+    print(outputs.logits.shape)
+
+Saída relevante da fase 2 📝:
+
+    torch.Size([2, 2])
+
+ℹ️Nota:  a cabeça do modelo toma como entrada os vetores de alta dimensão que vimos antes e produz vetores contendo dois valores (um por rótulo)
+
+ℹ️Nota: Como temos apenas duas frases e dois rótulos, o resultado que obtemos do nosso modelo tem o formato 2 x 2.
+
+
+## Fase 3: Pós-processamento da saída
+
+    import torch
+
+    predictions = torch.nn.functional.softmax(outputs.logits, dim=-1)
+    print(predictions)
+
+    print(outputs.logits) ##Lógits
+
+    print(model.config.id2label) ##Probabilidades
+
+    model.config.id2label ##Resultado
+
+Saída relevante da fase 3📝:
+
+    ##logits
+
+    tensor([[-1.5607,  1.6123],
+            [ 4.1692, -3.3464]], grad_fn=<AddmmBackward0>)
+
+    ##Probabilidades
+
+    tensor([[4.0195e-02, 9.5980e-01],
+            [9.9946e-01, 5.4418e-04]], grad_fn=<SoftmaxBackward0>)
+
+    ##Resultado
+            {0: 'NEGATIVE', 1: 'POSITIVE'}
+
+ℹ️Nota: A saída são logits, pontuações brutas e não normalizadas emitidas pela última camada do modelo, precisam passar por uma camda SoftMax para serem convertidos em probabilidades
+
+
+✨✨Exercício hugging face: ✏️ Experimente! Escolha dois (ou mais) textos próprios e execute-os no sentiment-analysis pipeline. Em seguida, replique você mesmo os passos que viu aqui e verifique se obtém os mesmos resultados!
+
+    ## Resposta 
+
+    ## Fase 0
+
+    from transformers import pipeline
+
+    classifier = pipeline("sentiment-analysis")
+    result = classifier(
+        [
+            "The food smels bad!, give me another dish",
+            "So, the fish that i order is so good, can i repeat de order ?",
+            "I love my work, this years are the greatest os my life",
+            "Man you play for four hours, your brain are a beautiful",
+            "I feel so sick, please buy me a remedy",
+            
+        ]
+    )
+
+    print(result)
+
+
+    ## Fase 1
+
+    from transformers import AutoTokenizer
+
+
+    checkpoint = "distilbert-base-uncased-finetuned-sst-2-english"
+    tokenizer = AutoTokenizer.from_pretrained(checkpoint)
+
+
+    raw_inputs = [
+            "So, the fish that i order is so good, can i repeat de order ?",
+            "I love my work, this years are the greatest os my life",
+            "Man you play for four hours, your brain are a beautiful",
+            "I feel so sick, please buy me a remedy",
+    ]
+    inputs = tokenizer(raw_inputs, padding=True, truncation=True, return_tensors="pt")
+    print(inputs)
+
+    ## Fase 2
+
+    from transformers import AutoModel
+
+    ##checkpoint = "distilbert-base-uncased-finetuned-sst-2-english"
+    ##checkpoint ja foi carregado mais acima 
+
+    model = AutoModel.from_pretrained(checkpoint)
+
+    outputs = model(**inputs)
+    print(outputs.last_hidden_state.shape)
+
+    ## A saída sera três números que tem o significado abaixo:
+    ## Tamanho do lote: O número de sequências processadas por vez (2 em nosso exemplo).
+    ## Comprimento da sequência: O comprimento da representação numérica da sequência (16 no nosso exemplo).
+    ## Tamanho oculto: A dimensão vetorial de cada entrada do modelo.
+
+    ## Fase 2.1
+
+    from transformers import AutoModelForSequenceClassification
+
+    ## Modelo com um cabeçalho de classificação de sequência (para poder classificar as sentenças como positivas ou negativas).
+    model = AutoModelForSequenceClassification.from_pretrained(checkpoint)
+    outputs = model(**inputs)
+    print(outputs.logits.shape)
+    ## A cabeça do modelo toma como entrada os vetores de alta dimensão que vimos antes e produz vetores contendo dois valores (um por rótulo)
+    ## Como temos apenas duas frases e dois rótulos, o resultado que obtemos do nosso modelo tem o formato 2 x 2.
+
+    ## Fase 3
+
+    print(outputs.logits)
+
+    ## Serão logits, as pontuações brutas e não normalizadas emitidas pela última camada do modelo.
+    ##precisam passar por uma camda SoftMax para serem convertidos em probabilidades
+
+    import torch
+
+    predictions = torch.nn.functional.softmax(outputs.logits, dim=-1)
+    print(predictions)
+
+    print(model.config.id2label)
+
+
+
+
+
+
+
+
 
 
 

@@ -1545,7 +1545,187 @@ Saída relevante📝:
     
 ℹ️Nota:  método não apenas converte os índices de volta em tokens, mas também agrupa os tokens que faziam parte das mesmas palavras para produzir uma frase legível.
 
+## Modulo 5: manipulando múltiplas sequências.
 
+    import torch
+    from transformers import AutoTokenizer, AutoModelForSequenceClassification
+
+    checkpoint = "distilbert-base-uncased-finetuned-sst-2-english"
+    tokenizer = AutoTokenizer.from_pretrained(checkpoint)
+    model = AutoModelForSequenceClassification.from_pretrained(checkpoint)
+
+    sequence = "I've been waiting for a HuggingFace course my whole life."
+
+    tokens = tokenizer.tokenize(sequence)
+    ids = tokenizer.convert_tokens_to_ids(tokens)
+    input_ids = torch.tensor(ids)
+
+    # Essa linha vai falhar
+    model(input_ids)
+
+Saída relevante📝:
+
+    IndexError: Dimension out of range (expected to be in range of [-1, 0], but got 1)
+
+ℹ️Nota:O problema é que enviamos uma única sequência para o modelo, enquanto os modelos 🤗 Transformers esperam múltiplas sentenças por padrão. O tokenizador não apenas converteu a lista de IDs de entrada em um tensor, mas também adicionou uma dimensão a ele:
+
+**Correção**
+
+    import torch
+    from transformers import AutoTokenizer, AutoModelForSequenceClassification
+
+    checkpoint = "distilbert-base-uncased-finetuned-sst-2-english"
+    tokenizer = AutoTokenizer.from_pretrained(checkpoint)
+    model = AutoModelForSequenceClassification.from_pretrained(checkpoint)
+
+    sequence = "I've been waiting for a HuggingFace course my whole life."
+
+    tokens = tokenizer.tokenize(sequence)
+    ids = tokenizer.convert_tokens_to_ids(tokens)
+    input_ids = torch.tensor(ids)
+
+    # Correção
+    tokenized_inputs = tokenizer(sequence, return_tensors="pt")
+    print(tokenized_inputs["input_ids"])
+
+Saída relevante📝:
+
+    tensor([[  101,  1045,  1005,  2310,  2042,  3403,  2005,  1037, 17662, 12172, 2607,  2026,  2878,  2166,  1012,   102]])
+
+    
+**Adicionando novas dimensões**
+
+    import torch
+    from transformers import AutoTokenizer, AutoModelForSequenceClassification
+
+    checkpoint = "distilbert-base-uncased-finetuned-sst-2-english"
+    tokenizer = AutoTokenizer.from_pretrained(checkpoint)
+    model = AutoModelForSequenceClassification.from_pretrained(checkpoint)
+
+    sequence = "I've been waiting for a HuggingFace course my whole life."
+
+    tokens = tokenizer.tokenize(sequence)
+    ids = tokenizer.convert_tokens_to_ids(tokens)
+
+    input_ids = torch.tensor([ids])
+    print("Input IDs:", input_ids)
+
+    output = model(input_ids)
+    print("Logits:", output.logits)
+
+Saída relevante📝:
+
+    Input IDs: tensor([[ 1045,  1005,  2310,  2042,  3403,  2005,  1037, 17662, 12172,  2607,
+    2026,  2878,  2166,  1012]])
+    Logits: tensor([[-2.7276,  2.8789]], grad_fn=<AddmmBackward0>)
+
+**Batching(loteamento):  o ato de enviar várias frases através do modelo, todas de uma só vez. Se você tiver apenas uma frase, poderá simplesmente criar um lote com uma única sequência:**
+
+    batched_ids = [ids, ids]
+
+Este é um lote de duas sequências idênticas!
+
+Exercício hugging face
+
+✏️ Experimente! Converta isso batched_ids liste em um tensor e passe-o pelo seu modelo. Verifique se você obtém os mesmos logits de antes (mas duas vezes)!
+
+**Preenchendo as entradas**
+
+    batched_ids = [
+        [200, 200, 200],
+        [200, 200]
+    ]
+
+ℹ️Nota: A lista não esta retangular para contornar isso, usaremos enchimento (padding_id) para fazer com que nossos tensores tenham formato retangular. 
+
+ℹ️Nota: Por exemplo, se você tiver 10 frases com 10 palavras e 1 frase com 20 palavras, o preenchimento garantirá que todas as frases tenham 20 palavras. No nosso exemplo, o tensor resultante é assim:
+
+    padding_id = 100
+
+    batched_ids = [
+        [200, 200, 200],
+        [200, 200, padding_id],
+    ]
+
+ℹ️Nota: O ID do token de preenchimento pode ser encontrado em tokenizer.pad_token_id. Vamos usá-lo e enviar nossas duas frases através do modelo individualmente e agrupadas:
+
+    from transformers import AutoTokenizer, AutoModelForSequenceClassification
+    import torch
+
+    checkpoint = "distilbert-base-uncased-finetuned-sst-2-english"
+    tokenizer = AutoTokenizer.from_pretrained(checkpoint)
+    model = AutoModelForSequenceClassification.from_pretrained(checkpoint)
+
+    sequence1_ids = [[200, 200, 200]]
+    sequence2_ids = [[200, 200]]
+    batched_ids = [
+        [200, 200, 200],
+        [200, 200, tokenizer.pad_token_id],
+    ]
+
+    print(model(torch.tensor(sequence1_ids)).logits)
+    print(model(torch.tensor(sequence2_ids)).logits)
+    print(model(torch.tensor(batched_ids)).logits)
+
+Saída relevante📝:
+
+    tensor([[ 1.5694, -1.3895]], grad_fn=<AddmmBackward0>)
+    tensor([[ 0.5803, -0.4125]], grad_fn=<AddmmBackward0>)
+
+    We strongly recommend passing in an `attention_mask` since your input_ids may be padded. See https://huggingface.co/docs/transformers/troubleshooting#incorrect-output-when-padding-tokens-arent-masked.
+
+    tensor([[ 1.5694, -1.3895],
+            [ 1.3374, -1.2163]], grad_fn=<AddmmBackward0>)
+
+
+
+ℹ️Nota: Há algo errado com os logits em nossas previsões em lote: a segunda linha deve ser igual aos logits da segunda frase, mas temos valores completamente diferentes!
+
+Isso ocorre porque a principal característica dos modelos Transformer são as camadas de atenção que contextualizar cada token. Eles levarão em consideração os tokens de preenchimento, pois atendem a todos os tokens de uma sequência. Para obter o mesmo resultado ao passar frases individuais de diferentes comprimentos pelo modelo ou ao passar um lote com as mesmas frases e preenchimento aplicados, precisamos dizer a essas camadas de atenção para ignorarem os tokens de preenchimento. Isso é feito usando uma máscara de atenção.
+
+**Máscaras de atenção**
+
+São tensores,  1s indicam que os tokens correspondentes devem ser atendidos, e 0s indicam que os tokens correspondentes não devem ser atendidos
+
+    from transformers import AutoTokenizer, AutoModelForSequenceClassification
+    import torch
+
+    checkpoint = "distilbert-base-uncased-finetuned-sst-2-english"
+    tokenizer = AutoTokenizer.from_pretrained(checkpoint)
+    model = AutoModelForSequenceClassification.from_pretrained(checkpoint)
+
+    sequence1_ids = [[200, 200, 200]]
+    sequence2_ids = [[200, 200]]
+    batched_ids = [
+        [200, 200, 200],
+        [200, 200, tokenizer.pad_token_id],
+    ]
+
+    attention_mask = [
+        [1, 1, 1],
+        [1, 1, 0],
+    ]
+
+
+    outputs = model(torch.tensor(batched_ids), attention_mask=torch.tensor(attention_mask))
+    print(outputs.logits)
+
+Saída relevante📝:
+
+    tensor([[ 1.5694, -1.3895],
+            [ 0.5803, -0.4125]], grad_fn=<AddmmBackward0>)
+
+Exercício hugging face: ✏️ Experimente! Aplique a tokenização manualmente nas duas frases usadas na seção 2 (“Estive esperando por um curso HuggingFace toda a minha vida.” e “odeio tanto isso!”). Passe-os pelo modelo e verifique se você obtém os mesmos logits da seção 2. Agora agrupe-os usando o token de preenchimento e crie a máscara de atenção adequada. Verifique se você obtém os mesmos resultados ao passar pelo modelo!
+
+**Sequências mais longas**
+
+A maioria dos modelos manipula sequências de até 512 ou 1024 tokens e trava quando solicitados a processar sequências mais longas
+
+Para solucionar:
+
+Use um modelo com um comprimento de sequência suportado maior.
+
+Trunque suas sequências.
     
 
 

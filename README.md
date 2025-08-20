@@ -1364,6 +1364,192 @@ Saída relevante📝:
 
     torch.Size([3, 4, 768])
 
+## Modulo 4: tokenizadores, pontos mais importantes.
+
+ℹ️Nota: será explorado o que acontece no pipeline de tokenização.
+
+Propósito: traduzir texto em dados (números) que podem ser processados pelo modelo.
+
+ℹ️Nota: Traduzir texto para números é conhecido como codificação., é feita em um processo de duas etapas: a tokenização, seguida pela conversão em IDs de entrada.
+
+O primeiro passo é dividir o texto em palavras (tokens), O segundo passo é converter esses tokens em números...
+
+...Para fazer isso, o tokenizador possui um vocabulário, que é a parte que baixamos quando a instanciamos com o from_pretrained() método
+
+**Tokenizador baseado em palavras**
+
+Exemplos:
+
+let's do tokenization!
+
+let/'s/do/tokenization/!
+
+    ## Tokenizadores
+
+    from transformers import BertModel, BertTokenizer
+
+    tokenized_text = "Jim henson was a puppeter".split()
+    print(tokenized_text)
+
+Saída relevante📝:
+
+    ['Jim', 'henson', 'was', 'a', 'puppeter']
+
+ℹ️Nota: Com esse tipo de tokenizador, podemos acabar com alguns “vocabulários” bem grandes, onde um vocabulário é definido pelo número total de tokens independentes que temos em nosso corpus.
+
+
+ℹ️Nota: Cada palavra recebe um ID, começando em 0 e indo até o tamanho do vocabulário. O modelo usa esses IDs para identificar cada palavra.
+
+ℹ️Nota: Palavras como “cão” são representadas de forma diferente de palavras como “cães”, e o modelo inicialmente não terá como saber que “cão” e “cães” são semelhantes: ele identificará as duas palavras como não relacionadas. O mesmo se aplica a outras palavras semelhantes, como “run” e “running”, que o modelo não verá como semelhantes inicialmente.
+
+Precisamos de um token personalizado para representar palavras que não estão em nosso vocabulário. Isso é conhecido como token “desconhecido”, geralmente representado como ”[UNK]” ou ”<unk>”.
+
+Caso seja visto muito unk é um mal sinal.
+
+**Tokenizador baseado em caracteres**
+
+ℹ️Nota: O vocabulário é muito menor.
+Há muito menos tokens fora do vocabulário (desconhecidos), já que cada palavra pode ser construída a partir de caracteres.
+
+Exemplos:
+
+let's do tokenization!
+
+l/e/t/'/s/d/o/t/o/k/e/n/i/z/a/t/i/o/n/!
+
+ℹ️Nota: Acabaremos com uma quantidade muito grande de tokens a serem processados pelo nosso modelo
+
+Logo usamos uma  técnica que combina as duas abordagens: tokenização de subpalavras.
+
+**Tokenizador baseado em subpalavras**
+
+ℹ️Nota: Aaseiam-se no princípio de que palavras usadas com frequência não devem ser divididas em subpalavras menores, mas palavras raras devem ser decompostas em subpalavras significativas.
+
+Exemplos:
+
+let's do tokenization!
+
+let's/do/token/ization/!
+
+**Carregando e salvando tokenizadores**
+
+    from transformers import AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
+
+    tokenizer.save_pretrained("local_no_computador")
+
+    encoded_input = tokenizer(
+        "Using a Transformer network is simple"
+    )
+    print(encoded_input)
+
+Saída relevante📝:
+
+    {'input_ids': 
+    
+    [101, 7993, 170, 13809, 23763, 2443, 1110, 3014, 102],
+    
+    'token_type_ids': 
+    
+    [0, 0, 0, 0, 0, 0, 0, 0, 0],
+    
+    'attention_mask': 
+    
+    [1, 1, 1, 1, 1, 1, 1, 1, 1]}
+
+**Codificação**
+
+**Tokenização baseada em subpalavras**
+
+    from transformers import AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
+
+    sequence = "Using a Transformer network is simple"
+    tokens = tokenizer.tokenize(sequence)
+
+    print(tokens)
+
+    ids = tokenizer.convert_tokens_to_ids(tokens)
+
+    print(ids)
+
+ℹ️Nota: A conversão para IDs de entrada é feita pelo convert_tokens_to_ids() método tokenizador, Essas saídas, uma vez convertidas no tensor de estrutura apropriado, podem então ser usadas como entradas para um modelo.
+
+Saída relevante📝:
+
+    ['Using', 'a', 'Trans', '##former', 'network', 'is', 'simple']
+
+    [7993, 170, 13809, 23763, 2443, 1110, 3014]'
+
+ℹ️Nota: Usaremos esses id's para decodificação. 
+
+Hugging face exercise:
+
+✏️ Try it out! Replicate the two last steps (tokenization and conversion to input IDs) on the input sentences we used in section 2 (“I’ve been waiting for a HuggingFace course my whole life.” and “I hate this so much!”). Check that you get the same input IDs we got earlier!
+
+✏️ Experimente! Replique as duas últimas etapas (tokenização e conversão para IDs de entrada) nas frases de entrada que usamos na seção 2 (“Eu estive esperando por um curso HuggingFace toda a minha vida” e “Eu odeio tanto isso!”). Verifique se você obtém os mesmos IDs de entrada que obtivemos anteriormente!
+
+Resposta abaixo:
+
+
+    from transformers import AutoTokenizer
+
+    checkpoint = "distilbert-base-uncased-finetuned-sst-2-english"
+    tokenizer = AutoTokenizer.from_pretrained(checkpoint)
+
+    raw_inputs = [
+        "I've been waiting for a HuggingFace course my whole life.",
+        "I hate this so much!",
+    ]
+    inputs = tokenizer(raw_inputs, padding=True, truncation=True, return_tensors="pt")
+    print(inputs)
+
+
+Saída relevante📝:
+
+    {'input_ids': 
+    
+    tensor
+    
+    ([[  101,  1045,  1005,  2310,  2042,  3403,  2005,  1037, 17662, 12172,2607,  2026,  2878,  2166,  1012,   102],
+
+    [  101,  1045,  5223,  2023,  2061,  2172,   999,   102,     0,     0,      0,     0,     0,     0,     0,     0]]), 
+    
+    'attention_mask': 
+    
+    tensor
+    
+    ([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+
+    [1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]])}
+
+**Decodificação**
+
+    from transformers import AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
+
+    sequence = "Using a Transformer network is simple"
+    tokens = tokenizer.tokenize(sequence)
+
+    decoded_string = tokenizer.decode([7993, 170, 11303, 1200, 2443, 1110, 3014])
+    print(decoded_string)
+
+Saída relevante📝:
+
+    ['Using', 'a', 'Trans', '##former', 'network', 'is', 'simple']
+
+    Using a transformer network is simple
+    
+ℹ️Nota:  método não apenas converte os índices de volta em tokens, mas também agrupa os tokens que faziam parte das mesmas palavras para produzir uma frase legível.
+
+
+    
+
+
+
 
 
 

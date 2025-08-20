@@ -733,7 +733,9 @@ Saída relevante📝:
 
 ['i', 'want', 'do', 'a', 'order']
 
-## Capítulo 2 Por trás da função pipeline. 📄📚
+## Usando transformadores. 📄📚
+
+## Modulo 2 por trás da função pipeline.
 
 ## Funcionamento do analisador de sentimentos. 😊 ou 😡
 
@@ -956,7 +958,7 @@ Saída relevante da fase 3📝:
 
     print(model.config.id2label)
 
-## Capítulo 2 Por trás da função pipeline. 📄📚
+## Modulo 3:  Modelos 📄📚
 
 ## Criando um transformer 🧠.
 

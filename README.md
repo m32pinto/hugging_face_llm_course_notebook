@@ -1337,7 +1337,7 @@ Saída relevante📝:
 
     # Opcional: Salvando o modelo para uso futuro
 
-    model.save_pretrained("/home/marcos/Desktop/projetos_e_estudos_em_ti/praticas_de_programacao/hugging_face_llm_course/conteudo_salvo")
+    model.save_pretrained("local_no_computador")
 
     # As entradas em formato de texto (strings)
 

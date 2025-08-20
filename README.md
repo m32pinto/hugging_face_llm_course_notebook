@@ -956,6 +956,416 @@ Saída relevante da fase 3📝:
 
     print(model.config.id2label)
 
+## Capítulo 2 Por trás da função pipeline. 📄📚
+
+## Criando um transformer 🧠.
+
+Utilizamos
+
+    from transformers import AutoModel
+
+    model = AutoModel.from_pretrained("bert-base-cased")
+
+ℹ️Nota: O método baixará e armazenará em cache os dados do modelo do Hugging Face Hub.
+
+ℹ️Nota: O nome do ponto de verificação corresponde a uma arquitetura e pesos de modelo específicos, neste caso um modelo BERT com uma arquitetura básica (12 camadas, 768 tamanhos ocultos, 12 cabeças de atenção)
+
+ℹ️Nota: O modelo possui entradas de caixa (Distinção entra maiúsculas e minúsculas)
+
+ℹ️Nota: O AutoModel class e seus associados são, na verdade, wrappers (empacotadores) simples projetados para buscar a arquitetura de modelo apropriada para um determinado ponto de verificação.
+
+ℹ️Nota: É uma classe automática que adivinha a arquitetura de modelo apropriada para você e instanciará a classe de modelo correta.
+
+**Porém caso saibamos a qual modelo usar podemos optar por:**
+
+    from transformers import BertModel
+
+    model = BertModel.from_pretrained("bert-base-cased")
+
+## Carregando e salvando
+
+Adicionamos no código:
+
+    model.save_pretrained("nome_do_local_de_salvamento")
+
+ℹ️Nota: No diretorio foi criado dois documentos de configurações: config.json e pytorch_model.bin (model safetensors)
+
+ℹ️Nota: No config.json temos os atributos necessários para construir a arquitetura do modelo, metadados, versão do transformer do ponto de verificação que foi salvo.
+
+ℹ️Nota: No pytorch_model.bin (model safetensors) temos o dicionário de estados, aqui temos todos os pesos do modelo (parâmetros do modelo)
+
+ℹ️Nota: Os dois arquivos ficam juntos. 
+
+ℹ️Nota: Para reutilizar um modelos salvo podemos usar:
+
+    from transformers import AutoModel
+
+    model = AutoModel.from_pretrained("directory_on_my_computer")
+
+## Compartilhando modelos no hugging face
+
+Utilizamos (Um por vez):
+
+    huggingface-cli login
+
+    model.push_to_hub("my-awesome-model")
+
+ℹ️Explicação: Logo isso fará upload dos arquivos do modelo para o Hub, em um repositório sob seu namespace chamado my-awesome-model. Então, qualquer um pode carregar seu modelo com o from_pretrained() método!
+
+**Para importar os modelos atualizados utilizamos**
+
+    from transformers import AutoModel
+
+    model = AutoModel.from_pretrained("your-username/my-awesome-model")
+
+## Codificado o texto
+
+    from transformers import AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
+
+    encoded_input = tokenizer("Hello, I'm a single sentence!")
+    print(encoded_input)
+
+
+    texto_decodificado = tokenizer.decode(encoded_input["input_ids"][4])
+
+    print(texto_decodificado)
+
+Saída relevante📝:
+
+    {'input_ids': [101, 8667, 117, 146, 112, 182, 170, 1423, 5650, 106, 102],
+    
+    'token_type_ids': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+    
+    'attention_mask': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}
+    
+    [CLS] Hello, I ' m a single sentence! [SEP]
+
+
+
+
+ℹ️Nota: A saída desse código será Um dicionário com os seguintes campos:
+
+input_ids: representações numéricas dos seus tokens
+
+token_type_ids: eles informam ao modelo qual parte da entrada é a frase A e qual é a frase 
+
+attention_mask: indica quais tokens devem ser atendidos e quais não devem
+
+ℹ️Nota: Podemos decodificar os IDs de entrada para recuperar o texto original usando:
+
+    texto_decodificado = tokenizer.decode(encoded_input["input_ids"][4])
+
+    print(texto_decodificado)
+
+ℹ️Nota:Atenção, entre colchetes no decodificador está a posição que será decodificada pode ser deixado vazio e será decodificado tudo
+
+
+ℹ️Nota: [CLS] e [SEP] são tokens especiais exigidos pelo modelo, sendo que nem todos precisam.
+
+
+**Com varias frases**
+
+    from transformers import AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
+
+    encoded_input = tokenizer(["How are you?", "I'm fine, thank you"])
+    print(encoded_input)
+
+Saída relevante📝:
+
+    {'input_ids': 
+    
+    [[101, 1731, 1132, 1128, 136, 102], 
+    
+    [101, 146, 112, 182, 2503, 117, 6243, 1128, 102]],
+    
+    'token_type_ids': 
+     
+    [[0, 0, 0, 0, 0, 0], 
+     
+    [0, 0, 0, 0, 0, 0, 0, 0, 0]],
+     
+    'attention_mask': 
+    
+    [[1, 1, 1, 1, 1, 1], 
+    
+    [1, 1, 1, 1, 1, 1, 1, 1, 1]]}
+
+**Extra: podemos pedir ao tokenizador para retornar tensores diretamente do PyTorch **
+
+    encoded_input = tokenizer("How are you?", "I'm fine, thank you!", return_tensors="pt")
+    print(encoded_input)
+
+Saída relevante📝:
+
+    {'input_ids': 
+    
+    tensor
+    
+    ([[  101,  1731,  1132,  1128,   136,   102],
+
+    [  101,  1045,  1005,  1049,  2503,   117,  5763,  1128,   136,   102]]),
+
+    'token_type_ids': 
+    
+    tensor
+    
+    ([[0, 0, 0, 0, 0, 0],
+    
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]), 
+
+    'attention_mask': 
+    
+    tensor
+    
+    ([[1, 1, 1, 1, 1, 1],
+
+
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])}
+
+ℹ️Nota: as duas listas não têm o mesmo comprimento! Matrizes e tensores precisam ser retangulares, então não podemos simplesmente converter essas listas em um tensor PyTorch (ou matriz NumPy). O tokenizador oferece uma opção para isso: preenchimento.
+
+**Logo**:
+
+    encoded_input = tokenizer(
+        ["How are you?", "I'm fine, thank you!"], padding=True, return_tensors="pt"
+    )
+    print(encoded_input)
+
+    Saída relevante📝:
+
+    {'input_ids': 
+    
+    tensor
+    
+    ([[101,  1731,  1132,  1128,   136,   102,     0,     0,     0,     0],
+         
+         
+    [101,  1045,  1005,  1049,  2503,   117,  5763,  1128,   136,   102]]), 
+
+    'token_type_ids': tensor([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]), 
+
+    'attention_mask': 
+    
+    tensor
+    
+    ([[1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+
+
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])}
+
+
+## Entradas de preenchimento (padding)
+
+    from transformers import AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
+
+    encoded_input = tokenizer(["How are you?", "I'm fine, thank you"], padding = True, return_tensors = "pt")
+    print(encoded_input)
+
+Saída relevante📝:
+
+    {'input_ids': 
+    
+    tensor
+    
+    ([[ 101, 1731, 1132, 1128,  136,  102,    0,    0,    0],
+
+    [ 101,  146,  112,  182, 2503,  117, 6243, 1128,  102]]),
+    
+    'token_type_ids': 
+    
+    tensor
+    
+    ([[0, 0, 0, 0, 0, 0, 0, 0, 0],
+
+    [0, 0, 0, 0, 0, 0, 0, 0, 0]]),
+
+    'attention_mask': tensor
+    
+    ([[1, 1, 1, 1, 1, 1, 0, 0, 0],
+
+    [1, 1, 1, 1, 1, 1, 1, 1, 1]])}
+
+**Logo: Agora temos tensores retangulares! os tokens de preenchimento foram codificados em IDs de entrada com ID 0 e também têm um valor de máscara de atenção de 0. Isso ocorre porque esses tokens de preenchimento não devem ser analisados pelo modelo: eles não fazem parte da frase real.**
+
+## Truncando entradas 
+
+**BERT só foi pré-treinado com sequências de até 512 token**
+
+    from transformers import AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
+
+    encoded_input = tokenizer(
+        "This is a very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very long sentence.",
+        truncation=True,
+    )
+    print(encoded_input["input_ids"])
+
+
+Saída relevante📝:
+
+    [101, 1188, 1110, 170, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1304, 1263, 5650, 119, 102]
+
+
+## Combinar os argumentos de preenchimento e truncamento, você pode garantir que seus tensores tenham o tamanho exato necessário:
+
+    from transformers import AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
+
+    encoded_input = tokenizer(
+        ["How are you?", "I'm fine, thank you!"],
+        padding=True,
+        truncation=True,
+        max_length=5,
+        return_tensors="pt",
+    )
+    print(encoded_input)
+
+Saída relevante📝:
+
+    {'input_ids': tensor
+    
+    ([[ 101, 1731, 1132, 1128,  102],
+
+    [ 101,  146,  112,  182,  102]]), 
+
+    'token_type_ids': tensor
+    
+    ([[0, 0, 0, 0, 0],
+
+    [0, 0, 0, 0, 0]]), 
+    
+    'attention_mask': 
+    
+    tensor
+    
+    ([[1, 1, 1, 1, 1],
+
+    [1, 1, 1, 1, 1]])}
+
+## Sobre os tokens especiais :
+**São usados quando o modelo é treinado com eles**
+
+    from transformers import AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
+
+    encoded_input = tokenizer("How are you?")
+    print(encoded_input["input_ids"])
+    decoded_input = tokenizer.decode(encoded_input["input_ids"])
+    print(decoded_input)
+
+Saída relevante📝:
+
+    [101, 1731, 1132, 1128, 136, 102]
+    [CLS] How are you? [SEP]
+
+## Extras
+
+    from transformers import BertConfig, BertModel
+
+    # Building the config
+    config = BertConfig()
+
+    # Building the model from the config
+    model = BertModel(config)   
+
+    print(config)
+
+Saída relevante📝:
+
+    'BertConfig {
+
+    "attention_probs_dropout_prob": 0.1,
+
+    "classifier_dropout": null,
+
+    "hidden_act": "gelu",
+
+    "hidden_dropout_prob": 0.1,
+
+    "hidden_size": 768,
+
+    "initializer_range": 0.02,
+
+    "intermediate_size": 3072,
+
+    "layer_norm_eps": 1e-12,
+
+    "max_position_embeddings": 512,
+
+    "model_type": "bert",
+
+    "num_attention_heads": 12,
+
+    "num_hidden_layers": 12,
+
+    "pad_token_id": 0,
+
+    "position_embedding_type": "absolute",
+
+    "transformers_version": "4.55.2",
+
+    "type_vocab_size": 2,
+
+    "use_cache": true,
+    
+    "vocab_size": 30522
+    }'
+
+
+## Fazendo uso de tensores como entrada para o modelo
+
+    from transformers import BertModel, BertTokenizer
+    import torch
+
+    # Carregar o Tokenizador e o Modelo
+
+    tokenizer = BertTokenizer.from_pretrained("bert-base-cased")
+    model = BertModel.from_pretrained("bert-base-cased")
+
+    # Opcional: Salvando o modelo para uso futuro
+
+    model.save_pretrained("/home/marcos/Desktop/projetos_e_estudos_em_ti/praticas_de_programacao/hugging_face_llm_course/conteudo_salvo")
+
+    # As entradas em formato de texto (strings)
+
+    raw_inputs = ["Hello!", "Cool.", "Nice!"]
+
+    # Tokenizar as entradas UMA VEZ
+    # A variável 'model_inputs' agora vai conter o dicionário com os tensores de IDs
+
+    model_inputs = tokenizer(raw_inputs, padding=True, return_tensors="pt")
+
+    # Passar os inputs para o modelo
+    # Os '**' (unpacking) passam o dicionário 'model_inputs' como argumentos nomeados
+    # para o modelo, que espera 'input_ids', 'attention_mask', etc.
+
+    output = model(**model_inputs)
+
+    # O output do modelo agora é válido
+
+    print(output.last_hidden_state.shape)
+
+ℹ️Nota: **Embora o modelo aceite muitos argumentos diferentes, apenas os IDs de entrada são necessários.***
+
+Saída relevante📝:
+
+    torch.Size([3, 4, 768])
+
+
+
+
+
 
 
 

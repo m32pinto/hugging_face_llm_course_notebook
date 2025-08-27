@@ -1726,7 +1726,113 @@ Para solucionar:
 Use um modelo com um comprimento de sequência suportado maior.
 
 Trunque suas sequências.
-    
+
+## Modulo 6: juntando tudo.
+
+    from transformers import AutoTokenizer
+
+    checkpoint = "distilbert-base-uncased-finetuned-sst-2-english"
+    tokenizer = AutoTokenizer.from_pretrained(checkpoint)
+
+    sequence = "I've been waiting for a HuggingFace course my whole life."
+
+    model_inputs = tokenizer(sequence)
+
+ℹ️Nota: Aqui a variável **model_inputs** contém tudo para um bom funcionamento, ela permite a a manipulação de varia sentenças como: 
+
+    sequences = ["I've been waiting for a HuggingFace course my whole life.", "So have I!"]
+
+    model_inputs = tokenizer(sequences)
+
+ℹ️Nota: Podemos configurar de acordo com as nossas espectatívas: 
+
+    # Preencherá as sequências até o comprimento máximo da sequência
+
+    model_inputs = tokenizer(sequences, padding="longest")
+
+    # Preencherá as sequências até o comprimento máximo do modelo
+
+    # (512 para BERT ou DistilBERT)
+
+    model_inputs = tokenizer(sequences, padding="max_length")
+
+    # Preencherá as sequências até o comprimento máximo especificado
+
+    model_inputs = tokenizer(sequences, padding="max_length", max_length=8)
+
+ℹ️Nota: Podemos também truncar sequências: 
+
+    sequences = ["I've been waiting for a HuggingFace course my whole life.", "So have I!"]
+
+    # Truncará as sequências que são maiores que o comprimento máximo do modelo
+
+    # (512 para BERT ou DistilBERT)
+
+    model_inputs = tokenizer(sequences, truncation=True)
+
+    # Truncará as sequências que são maiores que o comprimento máximo especificado
+
+    model_inputs = tokenizer(sequences, max_length=8, truncation=True)
+
+ℹ️Nota: Podemos ajustar o retorno das estruturas dos tensores como "pt" retorna tensores PyTorch e "np" retorna matrizes NumPy: 
+
+    sequences = ["I've been waiting for a HuggingFace course my whole life.", "So have I!"]
+
+    # Retorna tensores PyTorch
+
+    model_inputs = tokenizer(sequences, padding=True, return_tensors="pt")
+
+    # Retorna matrizes NumPy
+
+    model_inputs = tokenizer(sequences, padding=True, return_tensors="np")
+
+ℹ️Nota: Atenção aos ids de inicio e fim abaixo:
+
+    from transformers import AutoTokenizer
+
+    checkpoint = "distilbert-base-uncased-finetuned-sst-2-english"
+    tokenizer = AutoTokenizer.from_pretrained(checkpoint)
+
+    sequence = "I've been waiting for a HuggingFace course my whole life."
+
+    model_inputs = tokenizer(sequence)
+    print(model_inputs["input_ids"])
+
+    tokens = tokenizer.tokenize(sequence)
+    ids = tokenizer.convert_tokens_to_ids(tokens)
+    print(ids)
+
+Saída relevante📝:
+
+    [101, 1045, 1005, 2310, 2042, 3403, 2005, 1037, 17662, 12172, 2607, 2026, 2878, 2166, 1012, 102]
+
+    [1045, 1005, 2310, 2042, 3403, 2005, 1037, 17662, 12172, 2607, 2026, 2878, 2166, 1012]
+
+Decodificando com:
+
+    print(tokenizer.decode(model_inputs["input_ids"]))
+
+    print(tokenizer.decode(ids))
+
+Saída relevante📝:
+
+    [CLS] i've been waiting for a huggingface course my whole life. [SEP]
+
+    i've been waiting for a huggingface course my whole life.
+
+Última vez como ele pode lidar com múltiplas sequências (preenchimento!), sequências muito longas (truncamento!) e múltiplos tipos de tensores com sua API principal:
+
+    import torch
+    from transformers import AutoTokenizer, AutoModelForSequenceClassification
+
+    checkpoint = "distilbert-base-uncased-finetuned-sst-2-english"
+    tokenizer = AutoTokenizer.from_pretrained(checkpoint)
+    model = AutoModelForSequenceClassification.from_pretrained(checkpoint)
+    sequences = ["I've been waiting for a HuggingFace course my whole life.", "So have I!"]
+
+    tokens = tokenizer(sequences, padding=True, truncation=True, return_tensors="pt")
+    output = model(**tokens)
+
 
 
 

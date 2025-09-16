@@ -1625,6 +1625,230 @@ Saída relevante📝:
 
 Este é um lote de duas sequências idênticas!
 
+## Modulo 7: Implantação de inferência otimizada.
+
+✏️ Text Generation Inference (TGI), vLLM e llama.cpp ; são usados em ambientes de produção para servir llm aos usuários.
+
+ℹ️Tgi:  estável e previsível, usa comprimentos de sequência fixos para uso consistente da memória; usa técnicas de loteamento contínuo (processaa cálculos de atenção de forma muito eficiente e manter a GPU ocupada), suporte integrado ao Kubernetes, monitoramento por meio do Prometheus e Grafana, registro de nível empresarial,iltragem de conteúdo e limitação de taxa.
+	
+>Flash atention carrega dados uma vez na SRAM e realiza todos os cálculos lá.
+	
+ℹ️vLLM: utiliza o PagedAttention, divide a memória do modelo em blocos menores ; reduz a fragmentação da memória, pode facilmente substituir a API do OpenAI, funciona particularmente bem com Ray para gerenciar clusters
+
+>PagedAttention trata o cache KV dividido em “páginas” de tamanho fixo, não tratam as páginas de modo contíguo na memória da GPU utiliza uma tabela que rastreia qual página pertence a qual sequência, compartilhamento de chace kv entre várias sequências. 
+	
+ℹ️llama.cpp: concentra-se na eficiência da CPU com aceleração opcional da GPU, usa técnicas de quantização, implementa kernels otimizados para várias arquiteturas de CPU e da suporte ao gerenciamento básico de cache KV para geração eficiente de tokens, Com dependências mínimas e um núcleo C/C++ simples, fornece uma API compatível com OpenAI
+
+>Quantização: reduz a precisão dos pesos do modelo de ponto flutuante  de 8 bits, 4 bits, 3 bits e até 2 bits ,  Usa formatos tensoriais personalizados otimizados, diferentes níveis de quantização, nclui caminhos de código otimizados.
+
+## TGI
+
+>Iniciar servidor utilizando o docker.
+
+    docker run --gpus all \
+        --shm-size 1g \
+        -p 8080:80 \
+        -v ~/.cache/huggingface:/data \
+        ghcr.io/huggingface/text-generation-inference:latest \
+        --model-id HuggingFaceTB/SmolLM2-360M-Instruct
+
+>Logo após interagir com o servidor utilizando o inference cliente da HF.
+
+Notaℹ️: O servidor, inicia-se em um terminal separado caso a ferramenta seja o vs code. Logo terão dois terminais em funcionamento.  O código acima é para ser executado diretamente no terminal.
+
+    from huggingface_hub import InferenceClient
+
+    # Initialize client pointing to TGI endpoint
+    client = InferenceClient(
+        model="http://localhost:8080",  # URL to the TGI server
+    )
+
+    # Text generation
+    response = client.text_generation(
+        "Tell me a story",
+        max_new_tokens=100,
+        temperature=0.7,
+        top_p=0.95,
+        details=True,
+        stop_sequences=[],
+    )
+    print(response.generated_text)
+
+    # For chat format
+    response = client.chat_completion(
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "Tell me a story"},
+        ],
+        max_tokens=100,
+        temperature=0.7,
+        top_p=0.95,
+    )
+    print(response.choices[0].message.content)
+
+
+Notaℹ️: Deve-se iniciar esse pelo editor de texto e após rodar.
+
+Notaℹ️: Esse robô que está rodando ele o banco de dados dele é apenas baseado em histórias complementando em inglês.
+
+
+
+## Basic Text Generation
+
+Notaℹ️: TGI funcionou tranquilamente.
+
+Servidor
+
+    docker run --gpus all \
+        --shm-size 1g \
+        -p 8080:80 \
+        -v ~/.cache/huggingface:/data \
+        ghcr.io/huggingface/text-generation-inference:latest \
+        --model-id HuggingFaceTB/SmolLM2-360M-Instruct \
+        --max-total-tokens 4096 \
+        --max-input-length 3072 \
+        --max-batch-total-tokens 8192 \
+        --waiting-served-ratio 1.2
+
+Índice:
+
+    from huggingface_hub import InferenceClient
+
+    client = InferenceClient(model="http://localhost:8080")
+
+    # Advanced parameters examplecker
+    
+    response = client.chat_completion(
+        messages=[
+            {"role": "system", "content": "You are a creative storyteller."},
+            {"role": "user", "content": "Write a creative story"},
+        ],
+        temperature=0.8,
+        max_tokens=200,
+        top_p=0.95,
+    )
+    print(response.choices[0].message.content)
+
+    # Raw text generation
+    response = client.text_generation(
+        "Write a creative story about space exploration",
+        max_new_tokens=200,
+        temperature=0.8,
+        top_p=0.95,
+        repetition_penalty=1.1,
+        do_sample=True,
+        details=True,
+    )
+    print(response.generated_text)
+
+
+
+## Controle avançado de geração.
+
+Seleção e amostragens de tokens:
+
+Logits brutos: As probabilidades de saída iniciais para cada token.
+
+Temperatura: Controla a aleatoriedade na seleção (maior = mais criativo).
+
+Amostragem Top-p (Núcleo): Filtra para os tokens superiores que compõem X% da massa de probabilidade.
+
+Filtragem Top-k: Limita a seleção a k tokens mais prováveis.
+
+Funcionamento com TGI:
+
+
+    from huggingface_hub import InferenceClient
+
+    # Initialize client pointing to TGI endpoint
+    client = InferenceClient(
+        model="http://localhost:8080",  # URL to the TGI server
+    )
+
+    # Text generation
+    response = client.text_generation(
+        "Tell me a story",
+        max_new_tokens=100,
+        temperature=0.7,
+        top_p=0.95,
+        top_k=50,
+        repetition_penalty=1.1,
+        details=True,
+        stop_sequences=[],
+    )
+    print(response.generated_text)
+
+    # For chat format
+    response = client.chat_completion(
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "Tell me a story"},
+        ],
+        max_tokens=100,
+        temperature=0.7,
+        top_p=0.95,
+    )
+    print(response.choices[0].message.content)
+
+
+    #client.generate(
+    #    "Write a creative story",
+    #    temperature=0.8,  # Higher for more creativity
+    #    top_p=0.95,  # Consider top 95% probability mass
+    #    top_k=50,  # Consider top 50 tokens
+    #    max_new_tokens=100,  # Maximum length
+    #    repetition_penalty=1.1,  # Reduce repetition
+    #)
+
+Controlando a repetição:
+
+Atenção nessa parte ja percebemos que o TGI teve mais exito então vamos utilizar ele, logo eis o servidor.
+
+    docker run --gpus all \
+        --shm-size 1g \
+        -p 8080:80 \
+        -v ~/.cache/huggingface:/data \
+        ghcr.io/huggingface/text-generation-inference:latest \
+        --model-id HuggingFaceTB/SmolLM2-360M-Instruct \
+        --max-total-tokens 4096 \
+        --max-input-length 3072 \
+        --max-batch-total-tokens 8192 \
+        --waiting-served-ratio 1.2
+
+
+## Controlando a repetição.
+
+TGI
+
+    client.generate(
+        "Write a varied text",
+        repetition_penalty=1.1,  # Penalize repeated tokens
+        no_repeat_ngram_size=3,  # Prevent 3-gram repetition
+    )
+
+## Controle de comprimento e sequência de parada.
+
+TGI
+
+    client.generate(
+    "Generate a short paragraph",
+    max_new_tokens=100,
+    min_new_tokens=10,
+    stop_sequences=["\n\n", "###"],
+)
+
+## Gerenciamento de memória.
+
+TGI
+
+    # Docker deployment with memory optimization
+    docker run --gpus all -p 8080:80 \
+    --shm-size 1g \
+    ghcr.io/huggingface/text-generation-inference:latest \
+    --model-id HuggingFaceTB/SmolLM2-1.7B-Instruct \
+    --max-batch-total-tokens 8192 \
+    --max-input-length 4096
+
 Exercício hugging face
 
 ✏️ Experimente! Converta isso batched_ids liste em um tensor e passe-o pelo seu modelo. Verifique se você obtém os mesmos logits de antes (mas duas vezes)!
@@ -1645,7 +1869,229 @@ Exercício hugging face
     batched_ids = [
         [200, 200, 200],
         [200, 200, padding_id],
-    ]
+    ]## Modulo 7: Implantação de inferência otimizada.
+
+✏️ Text Generation Inference (TGI), vLLM e llama.cpp ; são usados em ambientes de produção para servir llm aos usuários.
+
+ℹ️Tgi:  estável e previsível, usa comprimentos de sequência fixos para uso consistente da memória; usa técnicas de loteamento contínuo (processaa cálculos de atenção de forma muito eficiente e manter a GPU ocupada), suporte integrado ao Kubernetes, monitoramento por meio do Prometheus e Grafana, registro de nível empresarial,iltragem de conteúdo e limitação de taxa.
+	
+>Flash atention carrega dados uma vez na SRAM e realiza todos os cálculos lá.
+	
+ℹ️vLLM: utiliza o PagedAttention, divide a memória do modelo em blocos menores ; reduz a fragmentação da memória, pode facilmente substituir a API do OpenAI, funciona particularmente bem com Ray para gerenciar clusters
+
+>PagedAttention trata o cache KV dividido em “páginas” de tamanho fixo, não tratam as páginas de modo contíguo na memória da GPU utiliza uma tabela que rastreia qual página pertence a qual sequência, compartilhamento de chace kv entre várias sequências. 
+	
+ℹ️llama.cpp: concentra-se na eficiência da CPU com aceleração opcional da GPU, usa técnicas de quantização, implementa kernels otimizados para várias arquiteturas de CPU e da suporte ao gerenciamento básico de cache KV para geração eficiente de tokens, Com dependências mínimas e um núcleo C/C++ simples, fornece uma API compatível com OpenAI
+
+>Quantização: reduz a precisão dos pesos do modelo de ponto flutuante  de 8 bits, 4 bits, 3 bits e até 2 bits ,  Usa formatos tensoriais personalizados otimizados, diferentes níveis de quantização, nclui caminhos de código otimizados.
+
+## TGI
+
+>Iniciar servidor utilizando o docker.
+
+    docker run --gpus all \
+        --shm-size 1g \
+        -p 8080:80 \
+        -v ~/.cache/huggingface:/data \
+        ghcr.io/huggingface/text-generation-inference:latest \
+        --model-id HuggingFaceTB/SmolLM2-360M-Instruct
+
+>Logo após interagir com o servidor utilizando o inference cliente da HF.
+
+Notaℹ️: O servidor, inicia-se em um terminal separado caso a ferramenta seja o vs code. Logo terão dois terminais em funcionamento.  O código acima é para ser executado diretamente no terminal.
+
+    from huggingface_hub import InferenceClient
+
+    # Initialize client pointing to TGI endpoint
+    client = InferenceClient(
+        model="http://localhost:8080",  # URL to the TGI server
+    )
+
+    # Text generation
+    response = client.text_generation(
+        "Tell me a story",
+        max_new_tokens=100,
+        temperature=0.7,
+        top_p=0.95,
+        details=True,
+        stop_sequences=[],
+    )
+    print(response.generated_text)
+
+    # For chat format
+    response = client.chat_completion(
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "Tell me a story"},
+        ],
+        max_tokens=100,
+        temperature=0.7,
+        top_p=0.95,
+    )
+    print(response.choices[0].message.content)
+
+
+Notaℹ️: Deve-se iniciar esse pelo editor de texto e após rodar.
+
+Notaℹ️: Esse robô que está rodando ele o banco de dados dele é apenas baseado em histórias complementando em inglês.
+
+
+
+## Basic Text Generation
+
+Notaℹ️: TGI funcionou tranquilamente.
+
+Servidor
+
+    docker run --gpus all \
+        --shm-size 1g \
+        -p 8080:80 \
+        -v ~/.cache/huggingface:/data \
+        ghcr.io/huggingface/text-generation-inference:latest \
+        --model-id HuggingFaceTB/SmolLM2-360M-Instruct \
+        --max-total-tokens 4096 \
+        --max-input-length 3072 \
+        --max-batch-total-tokens 8192 \
+        --waiting-served-ratio 1.2
+
+Índice:
+
+    from huggingface_hub import InferenceClient
+
+    client = InferenceClient(model="http://localhost:8080")
+
+    # Advanced parameters examplecker
+    
+    response = client.chat_completion(
+        messages=[
+            {"role": "system", "content": "You are a creative storyteller."},
+            {"role": "user", "content": "Write a creative story"},
+        ],
+        temperature=0.8,
+        max_tokens=200,
+        top_p=0.95,
+    )
+    print(response.choices[0].message.content)
+
+    # Raw text generation
+    response = client.text_generation(
+        "Write a creative story about space exploration",
+        max_new_tokens=200,
+        temperature=0.8,
+        top_p=0.95,
+        repetition_penalty=1.1,
+        do_sample=True,
+        details=True,
+    )
+    print(response.generated_text)
+
+
+
+## Controle avançado de geração.
+
+Seleção e amostragens de tokens:
+
+Logits brutos: As probabilidades de saída iniciais para cada token.
+
+Temperatura: Controla a aleatoriedade na seleção (maior = mais criativo).
+
+Amostragem Top-p (Núcleo): Filtra para os tokens superiores que compõem X% da massa de probabilidade.
+
+Filtragem Top-k: Limita a seleção a k tokens mais prováveis.
+
+Funcionamento com TGI:
+
+
+    from huggingface_hub import InferenceClient
+
+    # Initialize client pointing to TGI endpoint
+    client = InferenceClient(
+        model="http://localhost:8080",  # URL to the TGI server
+    )
+
+    # Text generation
+    response = client.text_generation(
+        "Tell me a story",
+        max_new_tokens=100,
+        temperature=0.7,
+        top_p=0.95,
+        top_k=50,
+        repetition_penalty=1.1,
+        details=True,
+        stop_sequences=[],
+    )
+    print(response.generated_text)
+
+    # For chat format
+    response = client.chat_completion(
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "Tell me a story"},
+        ],
+        max_tokens=100,
+        temperature=0.7,
+        top_p=0.95,
+    )
+    print(response.choices[0].message.content)
+
+
+    #client.generate(
+    #    "Write a creative story",
+    #    temperature=0.8,  # Higher for more creativity
+    #    top_p=0.95,  # Consider top 95% probability mass
+    #    top_k=50,  # Consider top 50 tokens
+    #    max_new_tokens=100,  # Maximum length
+    #    repetition_penalty=1.1,  # Reduce repetition
+    #)
+
+Controlando a repetição:
+
+Atenção nessa parte ja percebemos que o TGI teve mais exito então vamos utilizar ele, logo eis o servidor.
+
+    docker run --gpus all \
+        --shm-size 1g \
+        -p 8080:80 \
+        -v ~/.cache/huggingface:/data \
+        ghcr.io/huggingface/text-generation-inference:latest \
+        --model-id HuggingFaceTB/SmolLM2-360M-Instruct \
+        --max-total-tokens 4096 \
+        --max-input-length 3072 \
+        --max-batch-total-tokens 8192 \
+        --waiting-served-ratio 1.2
+
+
+## Controlando a repetição.
+
+TGI
+
+    client.generate(
+        "Write a varied text",
+        repetition_penalty=1.1,  # Penalize repeated tokens
+        no_repeat_ngram_size=3,  # Prevent 3-gram repetition
+    )
+
+## Controle de comprimento e sequência de parada.
+
+TGI
+
+    client.generate(
+    "Generate a short paragraph",
+    max_new_tokens=100,
+    min_new_tokens=10,
+    stop_sequences=["\n\n", "###"],
+)
+
+## Gerenciamento de memória.
+
+TGI
+
+    # Docker deployment with memory optimization
+    docker run --gpus all -p 8080:80 \
+    --shm-size 1g \
+    ghcr.io/huggingface/text-generation-inference:latest \
+    --model-id HuggingFaceTB/SmolLM2-1.7B-Instruct \
+    --max-batch-total-tokens 8192 \
+    --max-input-length 4096
 
 ℹ️Nota: O ID do token de preenchimento pode ser encontrado em tokenizer.pad_token_id. Vamos usá-lo e enviar nossas duas frases através do modelo individualmente e agrupadas:
 
@@ -1834,7 +2280,229 @@ Saída relevante📝:
     output = model(**tokens)
 
 
+## Modulo 7: Implantação de inferência otimizada.
 
+✏️ Text Generation Inference (TGI), vLLM e llama.cpp ; são usados em ambientes de produção para servir llm aos usuários.
+
+ℹ️Tgi:  estável e previsível, usa comprimentos de sequência fixos para uso consistente da memória; usa técnicas de loteamento contínuo (processaa cálculos de atenção de forma muito eficiente e manter a GPU ocupada), suporte integrado ao Kubernetes, monitoramento por meio do Prometheus e Grafana, registro de nível empresarial,iltragem de conteúdo e limitação de taxa.
+	
+>Flash atention carrega dados uma vez na SRAM e realiza todos os cálculos lá.
+	
+ℹ️vLLM: utiliza o PagedAttention, divide a memória do modelo em blocos menores ; reduz a fragmentação da memória, pode facilmente substituir a API do OpenAI, funciona particularmente bem com Ray para gerenciar clusters
+
+>PagedAttention trata o cache KV dividido em “páginas” de tamanho fixo, não tratam as páginas de modo contíguo na memória da GPU utiliza uma tabela que rastreia qual página pertence a qual sequência, compartilhamento de chace kv entre várias sequências. 
+	
+ℹ️llama.cpp: concentra-se na eficiência da CPU com aceleração opcional da GPU, usa técnicas de quantização, implementa kernels otimizados para várias arquiteturas de CPU e da suporte ao gerenciamento básico de cache KV para geração eficiente de tokens, Com dependências mínimas e um núcleo C/C++ simples, fornece uma API compatível com OpenAI
+
+>Quantização: reduz a precisão dos pesos do modelo de ponto flutuante  de 8 bits, 4 bits, 3 bits e até 2 bits ,  Usa formatos tensoriais personalizados otimizados, diferentes níveis de quantização, nclui caminhos de código otimizados.
+
+## TGI
+
+>Iniciar servidor utilizando o docker.
+
+    docker run --gpus all \
+        --shm-size 1g \
+        -p 8080:80 \
+        -v ~/.cache/huggingface:/data \
+        ghcr.io/huggingface/text-generation-inference:latest \
+        --model-id HuggingFaceTB/SmolLM2-360M-Instruct
+
+>Logo após interagir com o servidor utilizando o inference cliente da HF.
+
+Notaℹ️: O servidor, inicia-se em um terminal separado caso a ferramenta seja o vs code. Logo terão dois terminais em funcionamento.  O código acima é para ser executado diretamente no terminal.
+
+    from huggingface_hub import InferenceClient
+
+    # Initialize client pointing to TGI endpoint
+    client = InferenceClient(
+        model="http://localhost:8080",  # URL to the TGI server
+    )
+
+    # Text generation
+    response = client.text_generation(
+        "Tell me a story",
+        max_new_tokens=100,
+        temperature=0.7,
+        top_p=0.95,
+        details=True,
+        stop_sequences=[],
+    )
+    print(response.generated_text)
+
+    # For chat format
+    response = client.chat_completion(
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "Tell me a story"},
+        ],
+        max_tokens=100,
+        temperature=0.7,
+        top_p=0.95,
+    )
+    print(response.choices[0].message.content)
+
+
+Notaℹ️: Deve-se iniciar esse pelo editor de texto e após rodar.
+
+Notaℹ️: Esse robô que está rodando ele o banco de dados dele é apenas baseado em histórias complementando em inglês.
+
+
+
+## Basic Text Generation
+
+Notaℹ️: TGI funcionou tranquilamente.
+
+Servidor
+
+    docker run --gpus all \
+        --shm-size 1g \
+        -p 8080:80 \
+        -v ~/.cache/huggingface:/data \
+        ghcr.io/huggingface/text-generation-inference:latest \
+        --model-id HuggingFaceTB/SmolLM2-360M-Instruct \
+        --max-total-tokens 4096 \
+        --max-input-length 3072 \
+        --max-batch-total-tokens 8192 \
+        --waiting-served-ratio 1.2
+
+Índice:
+
+    from huggingface_hub import InferenceClient
+
+    client = InferenceClient(model="http://localhost:8080")
+
+    # Advanced parameters examplecker
+    
+    response = client.chat_completion(
+        messages=[
+            {"role": "system", "content": "You are a creative storyteller."},
+            {"role": "user", "content": "Write a creative story"},
+        ],
+        temperature=0.8,
+        max_tokens=200,
+        top_p=0.95,
+    )
+    print(response.choices[0].message.content)
+
+    # Raw text generation
+    response = client.text_generation(
+        "Write a creative story about space exploration",
+        max_new_tokens=200,
+        temperature=0.8,
+        top_p=0.95,
+        repetition_penalty=1.1,
+        do_sample=True,
+        details=True,
+    )
+    print(response.generated_text)
+
+
+
+## Controle avançado de geração.
+
+Seleção e amostragens de tokens:
+
+Logits brutos: As probabilidades de saída iniciais para cada token.
+
+Temperatura: Controla a aleatoriedade na seleção (maior = mais criativo).
+
+Amostragem Top-p (Núcleo): Filtra para os tokens superiores que compõem X% da massa de probabilidade.
+
+Filtragem Top-k: Limita a seleção a k tokens mais prováveis.
+
+Funcionamento com TGI:
+
+
+    from huggingface_hub import InferenceClient
+
+    # Initialize client pointing to TGI endpoint
+    client = InferenceClient(
+        model="http://localhost:8080",  # URL to the TGI server
+    )
+
+    # Text generation
+    response = client.text_generation(
+        "Tell me a story",
+        max_new_tokens=100,
+        temperature=0.7,
+        top_p=0.95,
+        top_k=50,
+        repetition_penalty=1.1,
+        details=True,
+        stop_sequences=[],
+    )
+    print(response.generated_text)
+
+    # For chat format
+    response = client.chat_completion(
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "Tell me a story"},
+        ],
+        max_tokens=100,
+        temperature=0.7,
+        top_p=0.95,
+    )
+    print(response.choices[0].message.content)
+
+
+    #client.generate(
+    #    "Write a creative story",
+    #    temperature=0.8,  # Higher for more creativity
+    #    top_p=0.95,  # Consider top 95% probability mass
+    #    top_k=50,  # Consider top 50 tokens
+    #    max_new_tokens=100,  # Maximum length
+    #    repetition_penalty=1.1,  # Reduce repetition
+    #)
+
+Controlando a repetição:
+
+Atenção nessa parte ja percebemos que o TGI teve mais exito então vamos utilizar ele, logo eis o servidor.
+
+    docker run --gpus all \
+        --shm-size 1g \
+        -p 8080:80 \
+        -v ~/.cache/huggingface:/data \
+        ghcr.io/huggingface/text-generation-inference:latest \
+        --model-id HuggingFaceTB/SmolLM2-360M-Instruct \
+        --max-total-tokens 4096 \
+        --max-input-length 3072 \
+        --max-batch-total-tokens 8192 \
+        --waiting-served-ratio 1.2
+
+
+## Controlando a repetição.
+
+TGI
+
+    client.generate(
+        "Write a varied text",
+        repetition_penalty=1.1,  # Penalize repeated tokens
+        no_repeat_ngram_size=3,  # Prevent 3-gram repetition
+    )
+
+## Controle de comprimento e sequência de parada.
+
+TGI
+
+    client.generate(
+    "Generate a short paragraph",
+    max_new_tokens=100,
+    min_new_tokens=10,
+    stop_sequences=["\n\n", "###"],
+)
+
+## Gerenciamento de memória.
+
+TGI
+
+    # Docker deployment with memory optimization
+    docker run --gpus all -p 8080:80 \
+    --shm-size 1g \
+    ghcr.io/huggingface/text-generation-inference:latest \
+    --model-id HuggingFaceTB/SmolLM2-1.7B-Instruct \
+    --max-batch-total-tokens 8192 \
+    --max-input-length 4096
 
 
 
